@@ -5,63 +5,51 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: jaehejun <jaehejun@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/07/28 18:44:43 by jaehejun          #+#    #+#             */
-/*   Updated: 2023/07/30 16:30:58 by jaehejun         ###   ########.fr       */
+/*   Created: 2023/08/01 13:50:56 by jaehejun          #+#    #+#             */
+/*   Updated: 2023/08/02 15:52:54 by jaehejun         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include <signal.h>
+#include <unistd.h>
 #include <stdio.h>
- 
-int	main(void)
+
+static int g_current_bit = 0;
+static int g_char = 0;
+
+void signal_handler(int signum)
 {
-    char room = 0;
-    int i, j;
- 
-    printf("2번 방과 7번 방의 불을 on합니다.\n\n");
- 
-    room |= 2;     // 0000 0010 마스크와 비트 OR 연산으로 두 번째 비트를 켬
-    room |= 64;    // 0100 0000 마스크와 비트 OR 연산으로 일곱 번째 비트를 켬
- 
-    if (room & 1)  // & 연산자로 0000 0001 비트가 켜져 있는지 확인
-        printf("1번 방은 켜져(on) 있습니다.\n");
-    else
-        printf("1번 방은 꺼져(off) 있습니다.\n");
- 
-    if (room & 2)  // & 연산자로 0000 0010 비트가 켜져 있는지 확인, 2번 방 확인
-        printf("2번 방은 켜져(on) 있습니다.\n");
-    else
-        printf("2번 방은 꺼져(off) 있습니다.\n");
- 
-    if (room & 64) // & 연산자로 0100 0000 비트가 켜져 있는지 확인, 7번 방 확인
-        printf("7번 방은 켜져(on) 있습니다.\n");
-    else
-        printf("7번 방은 꺼져(off) 있습니다.\n");
-    printf("\n");
- 
-    printf("2번 방의 불을 끄겠습니다\n");
-    room &= ~2;    // 2번 방의 비트를 1 -> 0으로 반전하고 & 연산
- 
-    if (room & 2)  // & 연산자로 0000 0010 비트가 켜져 있는지 확인
-        printf("2번 방은 켜져(on) 있습니다.\n");
-    else
-        printf("2번 방은 꺼져(off) 있습니다.\n");
-    printf("\n");
-    printf("1번 방이 켜져 있다면 끄고 꺼져 있다면 켜겠습니다\n");
- 
-    room ^= 1;
- 
-    if (room & 1) // & 연산자로 0000 0001 비트가 켜져 있는지 확인
-        printf("1번 방은 켜져(on) 있습니다.\n");
-    else
-        printf("1번 방은 꺼져(off) 있습니다.\n");
-    printf("\n");
- 
-    printf("현재 모든 방의 점등 상태를 확인하겠습니다!\n");
- 
-    for (i = 1, j = 1; i <= 128; i = i * 2, j++) {
-        if (room & i)
-            printf("%d번 방은 켜져(on) 있습니다.\n", j);
+    if (signum == SIGUSR1)
+		g_char &= ~(1 << g_current_bit);
+    else if (signum == SIGUSR2)
+		g_char |= (1 << g_current_bit);
+    g_current_bit++;
+
+    if (g_current_bit >= 8)
+    {
+        if (g_char == 10)
+        {
+            int newline = 10;
+            write(1, &newline, 1);
+        }
         else
-            printf("%d번 방은 꺼져(off) 있습니다.\n", j);
+        {
+            write(1, &g_char, 1);
+        }
+        g_char = 0;
+        g_current_bit = 0;
     }
+}
+
+int main() {
+    signal(SIGUSR1, signal_handler);
+    signal(SIGUSR2, signal_handler);
+
+    printf("Server PID: %d\n", getpid());
+    
+    while (1) {
+        pause();
+    }
+
+    return 0;
 }
