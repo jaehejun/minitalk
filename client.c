@@ -5,102 +5,97 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: jaehejun <jaehejun@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/07/28 18:44:35 by jaehejun          #+#    #+#             */
-/*   Updated: 2023/08/02 19:29:09 by jaehejun         ###   ########.fr       */
+/*   Created: 2023/08/03 16:39:23 by jaehejun          #+#    #+#             */
+/*   Updated: 2023/08/03 22:51:23 by jaehejun         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include <signal.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <signal.h>
 
-void    send_message(int server_pid, char *message)
+void	receive_acknowledgement(int signum);
+void	send_pid(int server_pid, int client_pid);
+void	send_message(int server_pid, char *message);
+
+int	main(int argc, char *argv[])
 {
-    unsigned char   compare_bit;
-    int             message_index;
+	int		server_pid;
+	int		client_pid;
+	char	*message;
 
-    message_index = 0;
-    compare_bit = 1;
-    while (message[message_index] != '\0')
-    {
-        printf("while message left\n");
-        printf("while comparing bit\n");
-        while (compare_bit <= 128)
-        {
-            //printf("%d\n", compare_bit);
-            if ((message[message_index] & compare_bit) == 1)
-            {
-                kill(server_pid, SIGUSR1);
-            }
-            else
-                kill(server_pid, SIGUSR2);
-            usleep(50);
-            compare_bit = compare_bit << 1;
-            printf("%d\n", compare_bit);
-        }
-        message_index++;
-    }
-    return ;
-}
-
-int main(int argc, char* argv[])
-{
-    int     server_pid;
-    char    *message;
-    
-    // client parameter check
-    if (argc != 3)
+	if (argc != 3)
 	{
-        printf("Usage: ./client <server_pid> <string_to_send>\n");
-        exit(0);
-    }
-    // server_pid check
-    server_pid = atoi(argv[1]);
-    if (server_pid <= 100 || server_pid > 99999)
-    {
-        printf("Invalid PID\n");
-        exit(0);
-    }
-    message = argv[2];
-    printf("%s\n", message);
-    send_message(server_pid, message);
-    return (0);
+		printf("Usage: ./client [server_pid] [string_to_send]\n");
+		exit(1);
+	}
+	server_pid = atoi(argv[1]);
+	message = argv[2];
+	if (server_pid <= 100 || server_pid > 99999)
+	{
+		printf("server_pid is invalid\n");
+		exit(1);
+	}
+	client_pid = getpid();
+	if (client_pid <= 100 || client_pid > 99999)
+	{
+		printf("client_pid is invalid\n");
+		exit(1);
+	}
+	printf("client_pid: %d\n", client_pid);
+	signal(SIGUSR1, receive_acknowledgement);
+	//send_pid(server_pid, client_pid);
+	send_message(server_pid, message);
+	return (0);
 }
 
+void	receive_acknowledgement(int signum)
+{
+	if (signum == SIGUSR1)
+		printf("Received all messages!\n");
+}
 
-    
-    
-//    int message_index = 0;
-    
+//void	send_pid(int server_pid, int client_pid)
+//{
+//	int	compare_bit;
 
-
-
-//    while (message[message_index] != '\0')
+//	compare_bit = 1;
+//	while (compare_bit <= 65536)
 //	{
-//        int bit_index = 0;
-//        while (bit_index < 8)
+//		if ((client_pid & compare_bit) == 1)
 //		{
-//            int signal_to_send;
-//            int current_bit = (1 << bit_index);
-//            while(1) 
-//			{
-//                if (message[message_index] & current_bit)
-//				{
-//                    signal_to_send = SIGUSR2;
-//                }
-//				else
-//				{
-//                    signal_to_send = SIGUSR1;
-//                }
-//                break;
-//            }
-//            kill(server_pid, signal_to_send);
-//            usleep(50);
-//            bit_index++;
-//        }
-//        message_index++;
-//    }
-//    return 0;
+//			printf("1\n");
+//			kill(server_pid, SIGUSR1);
+//		}
+//		else if ((client_pid & compare_bit) == 0)
+//		{
+//			printf("0\n");
+//			kill(server_pid, SIGUSR2);
+//		}
+//		usleep(10000);
+//		compare_bit = compare_bit << 1;
+//	}
 //}
+
+void	send_message(int server_pid, char *message)
+{
+	int		message_index;
+	int		compare_bit;
+
+	message_index = 0;
+	while (message[message_index] != '\0')
+	{
+		compare_bit = 1;
+		while (compare_bit <= 128)
+		{
+			if ((message[message_index] & compare_bit) == 1)
+				kill(server_pid, SIGUSR1);
+			else if ((message[message_index] & compare_bit) == 0)
+				kill(server_pid, SIGUSR2);
+			sleep(1);
+			compare_bit = compare_bit << 1;
+		}
+		message_index++;
+	}
+}
