@@ -31,7 +31,7 @@ int	main(void)
 	while (compare_bit <= 65536)
 	{
 		printf("Compare bit : %d\n", compare_bit);
-		if ((client_pid & compare_bit) == 1)
+		if ((client_pid & compare_bit))
 			printf("1\n");
 		else if ((client_pid & compare_bit) == 0)
 			printf("0\n");
