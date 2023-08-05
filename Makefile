@@ -6,7 +6,7 @@
 #    By: jaehejun <jaehejun@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/07/30 16:09:21 by jaehejun          #+#    #+#              #
-#    Updated: 2023/07/31 19:37:23 by jaehejun         ###   ########.fr        #
+#    Updated: 2023/08/05 15:53:15 by jaehejun         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,8 +17,8 @@ CC		= cc
 
 CFLAGS	= -Wall -Wextra -Werror
 
-SRC_SERVER	= server.c
-SRC_CLIENT	= client.c
+SRC_SERVER	= server.c minitalk_utils.c
+SRC_CLIENT	= client.c minitalk_utils.c
 
 OBJ_SERVER	= $(SRC_SERVER:.c=.o)
 OBJ_CLIENT	= $(SRC_CLIENT:.c=.o)

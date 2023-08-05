@@ -6,49 +6,11 @@
 /*   By: jaehejun <jaehejun@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/03 16:39:23 by jaehejun          #+#    #+#             */
-/*   Updated: 2023/08/04 20:20:06 by jaehejun         ###   ########.fr       */
+/*   Updated: 2023/08/05 19:45:32 by jaehejun         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <signal.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-void	receive_acknowledgement(int signum);
-void	send_pid(int server_pid, int client_pid);
-void	send_message(int server_pid, char *message);
-void	send_terminating_signal(int server_pid);
-
-static int	is_space(char c)
-{
-	if ((9 <= c && c <= 13) || c == 32)
-		return (1);
-	return (0);
-}
-
-int	ft_atoi(const char *str)
-{
-	int		sign;
-	long	number;
-
-	sign = 1;
-	number = 0;
-	while (is_space(*str) == 1)
-		str++;
-	if (*str == '-' || *str == '+')
-	{
-		if (*str == '-')
-			sign *= -1;
-		str++;
-	}
-	while ('0' <= *str && *str <= '9')
-	{
-		number = number * 10 + (*str - '0');
-		str++;
-	}
-	return (number * sign);
-}
+#include "minitalk.h"
 
 int	main(int argc, char *argv[])
 {
@@ -58,18 +20,18 @@ int	main(int argc, char *argv[])
 
 	if (argc != 3)
 	{
-		printf("Usage: ./client server_pid \"string_to_send\"\n");
+		write(1, "Usage: ./client server_pid \"string_to_send\"\n", 45);
 		exit(1);
 	}
 	server_pid = ft_atoi(argv[1]);
+	client_pid = getpid();
 	message = argv[2];
-	if (server_pid <= 100 || server_pid > 99999)
+	if (server_pid <= 100 || server_pid > 99998)
 	{
-		printf("server_pid is invalid\n");
+		write(1, "server_pid is invalid\n", 22);
 		exit(1);
 	}
-	signal(SIGUSR1, receive_acknowledgement);
-	client_pid = getpid();
+	signal(SIGUSR1, receive_server_signal);
 	send_pid(server_pid, client_pid);
 	send_message(server_pid, message);
 	send_terminating_signal(server_pid);
@@ -78,24 +40,31 @@ int	main(int argc, char *argv[])
 	return (0);
 }
 
-void	receive_acknowledgement(int signum)
+void	receive_server_signal(int signum)
 {
 	if (signum == SIGUSR1)
-		printf("Received all messages!\n");
+		write(1, "Received all messages!\n", 23);
 	exit(0);
 }
 
 void	send_pid(int server_pid, int client_pid)
 {
 	int	compare_bit;
+	int	check_signal;
 
 	compare_bit = 1;
 	while (compare_bit <= 65536)
 	{
 		if (client_pid & compare_bit)
-			kill(server_pid, SIGUSR1);
+		{
+			check_signal = kill(server_pid, SIGUSR1);
+			check_sending_signal(check_signal);
+		}
 		else
-			kill(server_pid, SIGUSR2);
+		{
+			check_signal = kill(server_pid, SIGUSR2);
+			check_sending_signal(check_signal);
+		}
 		compare_bit = compare_bit << 1;
 		usleep(200);
 	}
@@ -105,6 +74,7 @@ void	send_message(int server_pid, char *message)
 {
 	int		message_index;
 	int		compare_bit;
+	int		check_signal;
 
 	message_index = 0;
 	while (message[message_index] != '\0')
@@ -113,9 +83,15 @@ void	send_message(int server_pid, char *message)
 		while (compare_bit <= 128)
 		{
 			if (message[message_index] & compare_bit)
-				kill(server_pid, SIGUSR1);
+			{
+				check_signal = kill(server_pid, SIGUSR1);
+				check_sending_signal(check_signal);
+			}
 			else
-				kill(server_pid, SIGUSR2);
+			{
+				check_signal = kill(server_pid, SIGUSR2);
+				check_sending_signal(check_signal);
+			}
 			compare_bit = compare_bit << 1;
 			usleep(200);
 		}
@@ -127,15 +103,22 @@ void	send_terminating_signal(int server_pid)
 {
 	int	compare_bit;
 	int	terminating_character;
+	int	check_signal;
 
 	compare_bit = 1;
 	terminating_character = 0;
 	while (compare_bit <= 128)
 	{
 		if (terminating_character & compare_bit)
-			kill(server_pid, SIGUSR1);
+		{
+			check_signal = kill(server_pid, SIGUSR1);
+			check_sending_signal(check_signal);
+		}
 		else
-			kill(server_pid, SIGUSR2);
+		{
+			check_signal = kill(server_pid, SIGUSR2);
+			check_sending_signal(check_signal);
+		}
 		compare_bit = compare_bit << 1;
 		usleep(200);
 	}
